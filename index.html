@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Flow Plate Data Extractor</title>
+    <!-- นำเข้า Tailwind CSS เพื่อความสวยงามและการตอบสนองแบบ Responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- นำเข้า Google Fonts เพื่อใช้ฟอนต์ภาษาไทยที่ทันสมัยและอ่านง่าย -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        .font-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* สไตล์ตารางดั้งเดิมตามภาพตัวอย่างแต่เพิ่มความประณีต */
+        .plate-header-row {
+            background-color: #00FFFF !important; /* สีฟ้าสว่าง */
+        }
+        .plate-header-cell {
+            color: #0000FF !important;            /* ตัวอักษรสีน้ำเงินเข้ม */
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-12 relative">
+
+    <!-- ส่วนจำลองแจ้งเตือน Toast Alert เมื่อกดคัดลอกสำเร็จ -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-100px] opacity-0 transition-all duration-300 ease-out bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 pointer-events-none">
+        <div class="p-1 bg-emerald-500 rounded-full text-white" id="toastIconContainer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <div>
+            <p id="toastMessage" class="font-bold text-sm text-slate-100">คัดลอกข้อมูลเรียบร้อยแล้ว!</p>
+            <p id="toastSubMessage" class="text-xs text-slate-400 mt-0.5">สามารถวางใน Excel ได้ทันที</p>
+        </div>
+    </div>
+
+    <!-- แถบเมนูด้านบนสุด (Header Navbar) -->
+    <nav class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+        <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/30">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold tracking-wider text-blue-400 uppercase">M-Flow Helper Tools</span>
+                    <h1 class="text-lg font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
+                        โปรแกรมสกัดแผ่นป้ายทะเบียน & ข้อมูลนำส่ง
+                    </h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    พร้อมใช้งาน
+                </span>
+                <span class="text-xs text-slate-500 border-l border-slate-700 pl-3">v2.5 Enterprise</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- คอนเทนเนอร์หลักของหน้าจอ -->
+    <main class="max-w-[1600px] mx-auto px-6 mt-6 space-y-6">
+
+        <!-- แผงแสดงสถิติย่อ (Statistical Cards Grid) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">รายการข้อมูลนำเข้า</p>
+                    <h3 class="text-3xl font-extrabold text-slate-800 mt-1 font-code" id="statTotal">0</h3>
+                </div>
+                <div class="p-3.5 bg-blue-50 text-blue-600 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">แผ่นป้ายปกติ / ย้าย R (สำเร็จ)</p>
+                    <h3 class="text-3xl font-extrabold text-emerald-600 mt-1 font-code" id="statNormal">0</h3>
+                </div>
+                <div class="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">เคสกรณี Dispute ออก</p>
+                    <h3 class="text-3xl font-extrabold text-indigo-600 mt-1 font-code" id="statSpecial">0</h3>
+                </div>
+                <div class="p-3.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">ระบุจังหวัดไม่ได้</p>
+                    <h3 class="text-3xl font-extrabold text-rose-500 mt-1 font-code" id="statError">0</h3>
+                </div>
+                <div class="p-3.5 bg-rose-50 text-rose-600 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- ส่วนของเครื่องมือการทำงาน (Workspace Split) -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            
+            <!-- ด้านซ้าย: พื้นที่กรอกข้อมูลและควบคุม (4 คอลัมน์) -->
+            <div class="xl:col-span-4 bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        กล่องนำเข้าข้อมูลดิบ
+                    </h3>
+                    <span class="text-xs bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-md">รองรับหลายบรรทัด</span>
+                </div>
+                
+                <div class="relative">
+                    <textarea id="rawInput" rows="10" 
+                        class="w-full p-4 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-mono text-xs leading-relaxed transition-all duration-150 outline-none placeholder:text-slate-300 bg-slate-50 focus:bg-white" 
+                        placeholder='วางข้อมูลจากระบบที่นี่... ตัวอย่าง:&#13;"06/06/2026 23:04:32 00   ด่านทับช้าง 1 - กฉ 6022 พะเยา"&#13;"03/06/2026 05:59:59 0 ด่านทับช้าง 1 - บน 1687 ปราจีนบุรี"&#13;*ระบบประมวลผลให้โดยอัตโนมัติเมื่อทำการวางข้อมูล*'
+                        oninput="debouncedProcess()"></textarea>
+                </div>
+
+                <!-- ชุดปุ่มสั่งการควบคุม -->
+                <div class="flex flex-col gap-2">
+                    <button onclick="processData()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-150 flex items-center justify-center gap-2 text-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        ประมวลผลข้อมูลป้ายทะเบียน
+                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="loadSample()" class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl border border-slate-200 transition-all duration-150 text-xs flex items-center justify-center gap-1.5">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            โหลดชุดตัวอย่าง
+                        </button>
+                        <button onclick="clearAll()" class="py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium rounded-xl border border-rose-100 transition-all duration-150 text-xs flex items-center justify-center gap-1.5">
+                            <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            ล้างทั้งหมด
+                        </button>
+                    </div>
+                </div>
+
+                <!-- การช่วยเหลือสั้นๆ -->
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-500 space-y-1.5">
+                    <p class="font-bold text-slate-700 flex items-center gap-1">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        คำแนะนำการคัดลอก:
+                    </p>
+                    <p>ปุ่ม "คัดลอกข้อมูลในตาราง" จะทำการส่งออกข้อมูลเป็นแบบคั่นด้วย Tap ซึ่งเหมาะสำหรับการนำไปกด **Paste (วาง)** ลงใน **Excel** หรือ **Google Sheets** โดยที่ข้อมูลจะถูกแบ่งเข้าแต่ละช่องในแถวที่เหมาะสมให้ทันทีอย่างแม่นยำ</p>
+                </div>
+            </div>
+
+            <!-- ด้านขวา: ผลลัพธ์ในรูปแบบตารางเวิร์กสเตชัน (8 คอลัมน์) -->
+            <div class="xl:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+                <div class="p-6 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-base font-extrabold text-slate-800">ตารางแผ่นงานข้อมูลประมวลผลแล้ว</h2>
+                        <span id="badgeCount" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">ทั้งหมด 0 รายการ</span>
+                    </div>
+
+                    <!-- ปุ่มคัดลอกใหญ่ -->
+                    <button onclick="copyTableDataOnly()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-extrabold rounded-xl shadow-md shadow-emerald-600/15 transition-all duration-150 flex items-center gap-2 ml-auto">
+                        <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                        </svg>
+                        คัดลอกข้อมูลในตาราง (ไม่เอาหัวตาราง)
+                    </button>
+                </div>
+
+                <!-- ส่วนแสดงเนื้อหาตารางแบบสกอร์ลได้ -->
+                <div class="overflow-x-auto min-h-[480px]">
+                    <table class="min-w-full divide-y divide-slate-200 table-fixed">
+                        <thead class="plate-header-row border-b border-slate-300">
+                            <tr>
+                                <th scope="col" class="w-[220px] px-4 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">ทะเบียนที่ต้องการสร้าง</th>
+                                <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Plate1</th>
+                                <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Plate2</th>
+                                <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Plate3</th>
+                                <th scope="col" class="w-[80px] px-2 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Ref</th>
+                                <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">ด่าน</th>
+                                <th scope="col" class="w-[170px] px-4 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">รายการผ่านทาง</th>
+                                <th scope="col" class="w-[180px] px-4 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">ทะเบียนที่ต้องการยิง</th>
+                                <th scope="col" class="w-[80px] px-2 py-3.5 text-xs tracking-wider text-center plate-header-cell">คัดลอก</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultBody" class="bg-white divide-y divide-slate-100 text-center">
+                            <tr>
+                                <td colspan="9" class="px-6 py-24 text-slate-400 text-center italic">
+                                    <div class="flex flex-col items-center justify-center space-y-3">
+                                        <div class="p-4 bg-slate-50 text-slate-300 rounded-full border border-dashed border-slate-200">
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="text-sm">
+                                            <p class="font-bold text-slate-500 italic not-of-it-style font-sans">ยังไม่มีข้อมูลในตาราง</p>
+                                            <p class="text-xs text-slate-400 mt-1">กรุณาวางข้อมูลหรือกดปุ่ม "โหลดข้อมูลตัวอย่างล่าสุด"</p>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- โค้ดโปรแกรมในการประมวลผลข้อมูล -->
+    <script>
+        // --- แหล่งข้อมูลจังหวัดเพื่ออ้างอิงรหัส System ---
+        const provinceData = [
+            { province: "กรุงเทพมหานคร", system: 10, plate: 1 }, { province: "สมุทรปราการ", system: 11, plate: 18 },
+            { province: "นนทบุรี", system: 12, plate: 17 }, { province: "ปทุมธานี", system: 13, plate: 16 },
+            { province: "พระนครศรีอยุธยา", system: 14, plate: 15 }, { province: "อ่างทอง", system: 15, plate: 13 },
+            { province: "ลพบุรี", system: 16, plate: 12 }, { province: "สิงห์บุรี", system: 17, plate: 11 },
+            { province: "ชัยนาท", system: 18, plate: 10 }, { province: "สระบุรี", system: 19, plate: 14 },
+            { province: "ชลบุรี", system: 20, plate: 23 }, { province: "ระยอง", system: 21, plate: 24 },
+            { province: "จันทบุรี", system: 22, plate: 25 }, { province: "ตราด", system: 23, plate: 26 },
+            { province: "ฉะเชิงเทรา", system: 24, plate: 22 }, { province: "ปราจีนบุรี", system: 25, plate: 21 },
+            { province: "นครนายก", system: 26, plate: 20 }, { province: "สระแก้ว", system: 27, plate: 27 },
+            { province: "นครราชสีมา", system: 30, plate: 35 }, { province: "บุรีรัมย์", system: 31, plate: 34 },
+            { province: "สุรินทร์", system: 32, plate: 36 }, { province: "ศรีสะเกษ", system: 33, plate: 33 },
+            { province: "อุบลราชธานี", system: 34, plate: 32 }, { province: "ยโสธร", system: 35, plate: 31 },
+            { province: "ชัยภูมิ", system: 36, plate: 30 }, { province: "อำนาจเจริญ", system: 37, plate: 37 },
+            { province: "บึงกาฬ", system: 38, plate: 402 }, { province: "หนองบัวลำภู", system: 39, plate: 401 },
+            { province: "ขอนแก่น", system: 40, plate: 45 }, { province: "อุดรธานี", system: 41, plate: 42 },
+            { province: "เลย", system: 42, plate: 41 }, { province: "หนองคาย", system: 43, plate: 40 },
+            { province: "มหาสารคาม", system: 44, plate: 47 }, { province: "ร้อยเอ็ด", system: 45, plate: 48 },
+            { province: "กาฬสินธุ์", system: 46, plate: 46 }, { province: "สกลนคร", system: 47, plate: 44 },
+            { province: "นครพนม", system: 48, plate: 43 }, { province: "มุกดาหาร", system: 49, plate: 49 },
+            { province: "เชียงใหม่", system: 50, plate: 52 }, { province: "ลำพูน", system: 51, plate: 55 },
+            { province: "ลำปาง", system: 52, plate: 56 }, { province: "อุตรดิตถ์", system: 53, plate: 60 },
+            { province: "แพร่", system: 54, plate: 57 }, { province: "น่าน", system: 55, plate: 54 },
+            { province: "พะเยา", system: 56, plate: 53 }, { province: "เชียงราย", system: 57, plate: 50 },
+            { province: "แม่ฮ่องสอน", system: 58, plate: 51 }, { province: "นครสวรรค์", system: 60, plate: 67 },
+            { province: "อุทัยธานี", system: 61, plate: 68 }, { province: "กำแพงเพชร", system: 62, plate: 64 },
+            { province: "ตาก", system: 63, plate: 62 }, { province: "สุโขทัย", system: 64, plate: 61 },
+            { province: "พิษณุโลก", system: 65, plate: 63 }, { province: "พิจิตร", system: 66, plate: 65 },
+            { province: "เพชรบูรณ์", system: 67, plate: 66 }, { province: "ราชบุรี", system: 70, plate: 73 },
+            { province: "กาญจนบุรี", system: 71, plate: 71 }, { province: "สุพรรณบุรี", system: 72, plate: 70 },
+            { province: "นครปฐม", system: 73, plate: 72 }, { province: "สมุทรสาคร", system: 74, plate: 74 },
+            { province: "สมุทรสงคราม", system: 75, plate: 75 }, { province: "เพชรบุรี", system: 76, plate: 76 },
+            { province: "ประจวบคีรีขันธ์", system: 77, plate: 77 }, { province: "นครศรีธรรมราช", system: 80, plate: 84 },
+            { province: "กระบี่", system: 81, plate: 85 }, { province: "พังงา", system: 82, plate: 83 },
+            { province: "ภูเก็ต", system: 83, plate: 86 }, { province: "สุราษฎร์ธานี", system: 84, plate: 82 },
+            { province: "ระนอง", system: 85, plate: 81 }, { province: "ชุมพร", system: 86, plate: 80 },
+            { province: "สงขลา", system: 90, plate: 92 }, { province: "สตูล", system: 91, plate: 93 },
+            { province: "ตรัง", system: 92, plate: 91 }, { province: "พัทลุง", system: 93, plate: 90 },
+            { province: "ปัตตานี", system: 94, plate: 94 }, { province: "ยะลา", system: 95, plate: 95 },
+            { province: "นราธิวาส", system: 96, plate: 96 }
+        ];
+
+        // สร้าง Object เพื่อเพิ่มความเร็วในการสืบค้นข้อมูลจังหวัด
+        const provinceLookup = {};
+        provinceData.forEach(item => {
+            provinceLookup[item.province.trim()] = item.system;
+        });
+
+        // เรียงลำดับคีย์ของจังหวัดตามความยาวเพื่อป้องกันชื่อซ้ำที่อาจซ้อนกัน เช่น "สมุทรสาคร" กับ "สมุทรสงคราม"
+        const sortedProvinces = Object.keys(provinceLookup).sort((a, b) => b.length - a.length);
+
+        // คำสำคัญที่เกี่ยวกับสถานะต่างๆ ที่อาจมาแทนชื่อจังหวัด
+        const statusKeywords = [
+            "dispute ออก", 
+            "disputeออก", 
+            "(dispute ออก)", 
+            "ย้ายไป r", 
+            "ย้ายไปr"
+        ];
+
+        // ข้อมูลตัวอย่างสำหรับใช้เมื่อกดปุ่มโหลดชุดตัวอย่าง
+        const sampleData = [
+            '06/06/2026 23:04:32 00   ด่านทับช้าง 1\t-\tกฉ 6022 พะเยา',
+            '03/06/2026 21:06:54 ถฎ 7203 กรุงเทพมหานคร ด่านธัญบุรี 2\t-\t( ย้ายไป R5 ) ถฎ 7203 กรุงเทพมหานคร',
+            '"03/06/2026 05:59:59 0 ด่านทับช้าง 1 - บน 1687 ปราจีนบุรี"',
+            '"03/06/2026 18:33:14 00   ด่านทับช้าง 2  -  3กว 9443 กรุงเทพมหานคร"',
+            '"03/06/2026 20:47:10 00   ด่านทับช้าง 2  -  ( ย้ายไป R5 ) ถฎ 7203 กรุงเทพมหานคร"',
+            '05/06/2026 20:29:51 00   ด่านทับช้าง 2  นางสาว ชนกวรรณ กันทะ  2ขช 5661 กรุงเทพมหานคร (แนบรูปหลังผิดคัน)',
+            '03/06/2026 10:20:11 0 ด่านทับช้าง 1-กค 1234 (Dispute ออก)',
+            '03/06/2026 09:12:35 0 ด่านทับช้าง ย้ายไป R3'
+        ].join('\n');
+
+        // ดีบาวน์ประมวลผลอัตโนมัติเมื่อคีย์ข้อมูลป้องกันเว็บกระตุก
+        let processTimeout;
+        function debouncedProcess() {
+            clearTimeout(processTimeout);
+            processTimeout = setTimeout(() => {
+                processData();
+            }, 500); // ดีเลย์ 500ms หลังพิมพ์หรือวางข้อความเสร็จ
+        }
+
+        // ฟังก์ชันเริ่มรันประมวลผลเมื่อเปิดเว็บ (ปล่อยว่างเพื่อให้พร้อมรับข้อมูลใหม่ทันที)
+        window.onload = function() {
+            clearAll();
+        };
+
+        // ฟังก์ชันโหลดข้อมูลตัวอย่างลงในกล่อง
+        function loadSample() {
+            document.getElementById('rawInput').value = sampleData;
+            processData();
+            showToast("โหลดชุดข้อมูลตัวอย่างพิเศษเรียบร้อยแล้ว!", true, "เริ่มประมวลผลทันที");
+        }
+
+        // ฟังก์ชันล้างข้อมูล
+        function clearAll() {
+            document.getElementById('rawInput').value = '';
+            const resultBody = document.getElementById('resultBody');
+            resultBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="px-6 py-24 text-slate-400 text-center italic">
+                        <div class="flex flex-col items-center justify-center space-y-3">
+                            <div class="p-4 bg-slate-50 text-slate-300 rounded-full border border-dashed border-slate-200">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                            </div>
+                            <div class="text-sm">
+                                <p class="font-bold text-slate-500 italic font-sans">ยังไม่มีข้อมูลในตาราง</p>
+                                <p class="text-xs text-slate-400 mt-1">กรุณาวางข้อมูลหรือกดปุ่ม "โหลดข้อมูลตัวอย่างล่าสุด"</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('badgeCount').textContent = "ทั้งหมด 0 รายการ";
+            updateStats(0, 0, 0, 0);
+        }
+
+        // ฟังก์ชันแจ้งเตือน Toast custom ใช้งานแทน alert()
+        function showToast(message, isSuccess = true, subMessage = "สามารถวางใน Excel ได้ทันที") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastSubMsg = document.getElementById('toastSubMessage');
+            const iconContainer = document.getElementById('toastIconContainer');
+            
+            toastMsg.textContent = message;
+            toastSubMsg.textContent = subMessage;
+            
+            if (isSuccess) {
+                iconContainer.className = "p-1 bg-emerald-500 rounded-full text-white";
+                iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+            } else {
+                iconContainer.className = "p-1 bg-rose-500 rounded-full text-white";
+                iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            }
+
+            // แสดงหน้าจอ Toast
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // ซ่อนหน้าจอเมื่อผ่านไป 2.5 วินาที
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-100px]', 'opacity-0');
+            }, 2500);
+        }
+
+        // อัปเดตข้อมูลสถิติบน Dashboard
+        function updateStats(total, normal, special, errors) {
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statNormal').textContent = normal;
+            document.getElementById('statSpecial').textContent = special;
+            document.getElementById('statError').textContent = errors;
+        }
+
+        // ฟังก์ชันดึงเฉพาะ วันเวลา (เช่น 06/06/2026 23:04:32) จากด้านหน้าของแถวข้อมูล
+        function getTransitDateTime(lineText) {
+            const dateTimeMatch = lineText.match(/\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}/);
+            return dateTimeMatch ? dateTimeMatch[0] : "";
+        }
+
+        // ฟังก์ชันแปลงชื่อด่านเป็นรหัสด่าน
+        function getGateCode(lineText) {
+            if (lineText.includes("ด่านทับช้าง 1")) return "TC1";
+            if (lineText.includes("ด่านทับช้าง 2")) return "TC2";
+            if (lineText.includes("ด่านธัญบุรี 1")) return "TY1";
+            if (lineText.includes("ด่านธัญบุรี 2")) return "TY2";
+            
+            if (lineText.includes("ด่านทับช้าง1")) return "TC1";
+            if (lineText.includes("ด่านทับช้าง2")) return "TC2";
+            if (lineText.includes("ด่านธัญบุรี1")) return "TY1";
+            if (lineText.includes("ด่านธัญบุรี2")) return "TY2";
+            
+            return ""; 
+        }
+
+        // ฟังก์ชันวิเคราะห์ "ทะเบียนที่ต้องการยิง" จากข้อมูลหลังเวลา
+        function getTargetShootPlate(lineText) {
+            const timeMatch = lineText.match(/\d{2}:\d{2}:\d{2}/);
+            if (!timeMatch) return "";
+
+            const afterTimeText = lineText.substring(lineText.indexOf(timeMatch[0]) + timeMatch[0].length).trim();
+            const gateKeywords = ["ด่านทับช้าง", "ด่านธัญบุรี"];
+            let endIndex = afterTimeText.length;
+
+            for (let keyword of gateKeywords) {
+                const idx = afterTimeText.indexOf(keyword);
+                if (idx !== -1 && idx < endIndex) {
+                    endIndex = idx;
+                }
+            }
+
+            let result = afterTimeText.substring(0, endIndex).trim();
+            result = result.replace(/^[-–\s\t]+/g, '').replace(/[-–\s\t]+$/g, '').trim();
+            return result;
+        }
+
+        // ฟังก์ชันช่วยสกัดหาข้อมูลสถานะในกรณีที่ไม่มีจังหวัด
+        function getStatusFromLine(lineText) {
+            const lowerText = lineText.toLowerCase();
+            
+            const rMatch = lineText.match(/ย้ายไป\s*[rR]\d+/i);
+            if (rMatch) {
+                return rMatch[0].replace(/\s+/g, ' ').replace(/r/i, 'R');
+            }
+
+            if (lowerText.includes("dispute") && lowerText.includes("ออก")) {
+                if (lineText.includes("(Dispute ออก)")) return "(Dispute ออก)";
+                if (lineText.includes("(dispute ออก)")) return "(dispute ออก)";
+                return "Dispute ออก";
+            }
+
+            for (let kw of statusKeywords) {
+                if (lowerText.includes(kw)) {
+                    const index = lowerText.indexOf(kw);
+                    return lineText.substring(index, index + kw.length);
+                }
+            }
+            return null;
+        }
+
+        // คัดลอกข้อมูลเฉพาะแถวนั้นๆ (คัดลอกด่วน)
+        function copySingleRow(elementId, formattedPlate, p1, p2, p3, ref, gate, time, shoot) {
+            const rowText = `${formattedPlate}\t${p1}\t${p2}\t${p3}\t${ref}\t${gate}\t${time}\t${shoot}`;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = rowText;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("คัดลอกข้อมูลรายการนี้สำเร็จ!", true, "คัดลอกแบบเว้นแท็บ 8 คอลัมน์");
+                }
+            } catch (err) {
+                showToast("คัดลอกไม่สำเร็จ", false, "สิทธิ์เบราว์เซอร์ไม่เพียงพอ");
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // ฟังก์ชันคัดลอกเฉพาะข้อมูลในตารางทั้งหมด (ส่งออกโครงสร้างแบบ 8 คอลัมน์)
+        function copyTableDataOnly() {
+            const resultBody = document.getElementById('resultBody');
+            const rows = resultBody.getElementsByTagName('tr');
+            
+            if (rows.length === 0 || (rows.length === 1 && rows[0].innerText.includes("ยังไม่มีข้อมูล"))) {
+                showToast("ไม่พบข้อมูลที่จะคัดลอก", false, "กรุณากรอกข้อมูลนำเข้าก่อนคัดลอก");
+                return;
+            }
+
+            let textToCopy = '';
+            let validRowsExtracted = 0;
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                
+                if (cells.length === 9) { // 8 ข้อมูล + 1 ปุ่มคัดลอกรายแถว
+                    if (cells[0].innerText.includes("ไม่สามารถระบุจังหวัด") && cells[1].innerText === "-") {
+                        continue; 
+                    }
+
+                    const col1 = cells[0].innerText.trim(); // ทะเบียนที่ต้องการสร้าง
+                    const col2 = cells[1].innerText.trim(); // Plate1
+                    const col3 = cells[2].innerText.trim(); // Plate2
+                    const col4 = cells[3].innerText.trim(); // Plate3
+                    const col5 = cells[4].innerText.trim(); // Ref
+                    const col6 = cells[5].innerText.trim(); // ด่าน
+                    const col7 = cells[6].innerText.trim(); // รายการผ่านทาง (วันเวลา)
+                    const col8 = cells[7].innerText.trim(); // ทะเบียนที่ต้องการยิง
+
+                    textToCopy += `${col1}\t${col2}\t${col3}\t${col4}\t${col5}\t${col6}\t${col7}\t${col8}\n`;
+                    validRowsExtracted++;
+                }
+            }
+
+            if (validRowsExtracted === 0 || textToCopy.trim() === '') {
+                showToast("ไม่พบข้อมูลแผ่นป้ายทะเบียนที่ถูกต้อง", false, "กรุณาใส่ข้อมูลจังหวัดที่ระบบสามารถแปลรหัสได้");
+                return;
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast(`คัดลอกสำเร็จทั้งหมด ${validRowsExtracted} รายการ!`, true, "นำไปวางในช่องซ้ายสุดของแถว Excel ได้ทันที");
+                }
+            } catch (err) {
+                showToast("เกิดข้อผิดพลาด", false, "ไม่สามารถจำลอง Clipboard ได้");
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        // ฟังก์ชันหลักในการคัดแยกและประมวลผลข้อมูล
+        function processData() {
+            const rawText = document.getElementById('rawInput').value;
+            const lines = rawText.split('\n');
+            const resultBody = document.getElementById('resultBody');
+            
+            let outputHtml = '';
+            let validCount = 0;
+
+            // ตัวแปรนับสถิติ Dashboard
+            let totalRecords = 0;
+            let normalPlates = 0; // ในยอดนี้จะนับรวม ย้าย R ตามเงื่อนไขใหม่ด้วย
+            let disputeCases = 0; // นับยอดเคสเฉพาะ Dispute ออก
+            let unrecognized = 0;
+
+            lines.forEach(line => {
+                let cleanLine = line.trim();
+                if (!cleanLine) return; // ข้ามบรรทัดว่าง
+
+                totalRecords++;
+                const originalLine = cleanLine; 
+
+                // เงื่อนไขที่ 1: ลบเครื่องหมายคำพูด (Double Quotes `"`) 
+                cleanLine = cleanLine.replace(/"/g, '').trim();
+
+                // วิเคราะห์ดึงเฉพาะวันเวลาผ่านทาง (เช่น 06/06/2026 23:04:32)
+                const transitDateTime = getTransitDateTime(cleanLine);
+
+                // วิเคราะห์สกัดข้อมูล "ด่าน" และ "ทะเบียนที่ต้องการยิง" ก่อน
+                const gateCode = getGateCode(cleanLine);
+                const targetShoot = getTargetShootPlate(cleanLine);
+
+                // วิเคราะห์เงื่อนไขพิเศษ "ย้ายไป R" และ "แนบรูปหลังผิดคัน" 
+                let rText = null;
+                const rMatch = cleanLine.match(/ย้ายไป\s*[rR]\d+/i);
+                if (rMatch) {
+                    rText = rMatch[0].replace(/\s+/g, ' ').replace(/r/i, 'R'); // เช่น "ย้ายไป R5"
+                }
+
+                const hasPhotoError = cleanLine.includes("แนบรูปหลังผิดคัน");
+                const hasDispute = /dispute\s*ออก/i.test(cleanLine);
+
+                // สร้างข้อความจำลองสำหรับดึงจังหวัดและข้อมูลแผ่นป้าย
+                let searchLine = cleanLine;
+                searchLine = searchLine.replace(/\(?\s*ย้ายไป\s*[rR]\d+\s*\)?/gi, '');
+                searchLine = searchLine.replace(/\(?\s*แนบรูปหลังผิดคัน\s*\)?/gi, '');
+                searchLine = searchLine.replace(/\(?\s*dispute\s*ออก\s*\)?/gi, '');
+                searchLine = searchLine.replace(/\s+/g, ' ').trim();
+
+                // ตรวจหาจังหวัดจากประโยค
+                let matchedProvince = null;
+                for (let prov of sortedProvinces) {
+                    if (searchLine.endsWith(prov) || searchLine.includes(prov)) {
+                        matchedProvince = prov;
+                        break;
+                    }
+                }
+
+                let formattedPlate = "";
+                let plate1 = "-";
+                let plate2 = "-";
+                let plate3 = "-";
+                let rowBgClass = "hover:bg-slate-50/80";
+                let statusBadge = "";
+
+                if (matchedProvince) {
+                    const provinceIndex = searchLine.lastIndexOf(matchedProvince);
+                    const beforeProvince = searchLine.substring(0, provinceIndex).trim();
+                    const segments = beforeProvince.split(/\s+/);
+
+                    if (segments.length >= 2) {
+                        plate2 = segments[segments.length - 1]; 
+                        plate1 = segments[segments.length - 2];   
+
+                        if (plate1.includes('-')) {
+                            plate1 = plate1.split('-').pop();
+                        }
+
+                        const systemCode = provinceLookup[matchedProvince];
+                        plate3 = `TH-${systemCode}`;
+                        formattedPlate = `${plate1} ${plate2} ${matchedProvince}`;
+                        
+                        if (rText) {
+                            formattedPlate += ` ${rText}`;
+                            statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">ย้าย R</span>`;
+                            normalPlates++; // นับยอดรวมย้าย R เข้าไปในแผ่นป้ายปกติสำเร็จ
+                        } else if (hasPhotoError) {
+                            formattedPlate += ` แนบรูปหลังผิดคัน`;
+                            statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-200">รูปผิด</span>`;
+                            normalPlates++; // รูปผิดก็นับเป็นรายการปกติสำเร็จที่สกัดได้
+                        } else {
+                            statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">ปกติ</span>`;
+                            normalPlates++;
+                        }
+                    } else {
+                        formattedPlate = `${cleanLine}`;
+                        plate3 = `TH-${provinceLookup[matchedProvince]}`;
+                        rowBgClass = "bg-amber-50/50 hover:bg-amber-100/50";
+                        statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">ไม่สมบูรณ์</span>`;
+                        normalPlates++; // ไม่สมบูรณ์แต่ระบุจังหวัดสำเร็จ
+                    }
+                } else {
+                    if (rText) {
+                        formattedPlate = rText;
+                        rowBgClass = "bg-indigo-50/40 hover:bg-indigo-100/40";
+                        statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">ย้าย R</span>`;
+                        normalPlates++; // เคสย้าย R แบบไม่มีจังหวัดก็นับรวมในสำเร็จ (ย้าย R)
+                    } else {
+                        const statusText = getStatusFromLine(cleanLine) || (hasDispute ? "Dispute ออก" : null);
+                        
+                        if (statusText) {
+                            formattedPlate = statusText;
+                            rowBgClass = "bg-indigo-50/40 hover:bg-indigo-100/40";
+                            statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">Dispute</span>`;
+                            disputeCases++; // นับเฉพาะยอดเคส Dispute ออก เท่านั้น
+                        } else {
+                            formattedPlate = "ไม่สามารถระบุจังหวัดที่ถูกต้องได้";
+                            rowBgClass = "bg-rose-50/40 hover:bg-rose-100/40";
+                            statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">ผิดพลาด</span>`;
+                            unrecognized++;
+                        }
+                    }
+                }
+
+                // กฎป้องกันพิเศษสำหรับกรณี Dispute ออก
+                const trimmedFormatted = formattedPlate.trim();
+                if (trimmedFormatted === "Dispute ออก" || trimmedFormatted === "(Dispute ออก)") {
+                    plate1 = "-";
+                    plate2 = "-";
+                    plate3 = "-";
+                }
+
+                // คลาสสไตล์ตัวอักษร
+                let plateStyleClass = "text-slate-800 font-bold";
+                if (trimmedFormatted === "Dispute ออก" || trimmedFormatted === "(Dispute ออก)" || trimmedFormatted.startsWith("ย้ายไป R")) {
+                    plateStyleClass = "text-indigo-900 font-extrabold";
+                } else if (trimmedFormatted === "ไม่สามารถระบุจังหวัดที่ถูกต้องได้") {
+                    plateStyleClass = "text-rose-600 font-semibold italic";
+                }
+
+                // สร้างแถวรายการตาราง
+                outputHtml += `
+                    <tr class="${rowBgClass} transition-colors duration-100 border-b border-slate-100">
+                        <td class="px-4 py-3.5 text-left border-r border-slate-200/50">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm ${plateStyleClass}">${formattedPlate}</span>
+                                ${statusBadge}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50">${plate1}</td>
+                        <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50">${plate2}</td>
+                        <td class="px-3 py-3.5 text-sm font-extrabold ${plate3 === '-' ? 'text-slate-400' : 'text-blue-600'} font-code border-r border-slate-200/50">${plate3}</td>
+                        <td class="px-2 py-3.5 text-sm text-slate-400 border-r border-slate-200/50 font-code">-</td>
+                        <td class="px-3 py-3.5 text-sm font-extrabold text-teal-600 border-r border-slate-200/50 font-code">${gateCode || "-"}</td>
+                        <td class="px-4 py-3.5 text-sm text-slate-500 font-code border-r border-slate-200/50 cursor-help" title="ข้อมูลบรรทัดดั้งเดิม: ${originalLine}">${transitDateTime || "-"}</td>
+                        <td class="px-4 py-3.5 text-sm font-semibold text-slate-700 font-code border-r border-slate-200/50">${targetShoot || "-"}</td>
+                        <td class="px-2 py-3.5">
+                            <button onclick="copySingleRow(this, '${formattedPlate.replace(/'/g, "\\'")}', '${plate1}', '${plate2}', '${plate3}', '-', '${gateCode}', '${transitDateTime}', '${targetShoot}')" 
+                                class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors duration-100" 
+                                title="คัดลอกบรรทัดนี้">
+                                <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                validCount++;
+            });
+
+            if (validCount > 0) {
+                resultBody.innerHTML = outputHtml;
+                document.getElementById('badgeCount').textContent = `ทั้งหมด ${validCount} รายการ`;
+                updateStats(totalRecords, normalPlates, disputeCases, unrecognized);
+            } else {
+                clearAll();
+            }
+        }
+    </script>
+</body>
+</html>
