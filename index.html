@@ -63,7 +63,7 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     พร้อมใช้งาน
                 </span>
-                <span class="text-xs text-slate-500 border-l border-slate-700 pl-3">v2.6 Enterprise</span>
+                <span class="text-xs text-slate-500 border-l border-slate-700 pl-3">v2.8 Enterprise</span>
             </div>
         </div>
     </nav>
@@ -134,10 +134,25 @@
                     <span class="text-xs bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-md">รองรับหลายบรรทัด</span>
                 </div>
                 
+                <!-- กล่องข้อมูลดิบ -->
                 <div class="relative">
-                    <textarea id="rawInput" rows="10" 
+                    <textarea id="rawInput" rows="7" 
                         class="w-full p-4 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-mono text-xs leading-relaxed transition-all duration-150 outline-none placeholder:text-slate-300 bg-slate-50 focus:bg-white" 
-                        placeholder='วางข้อมูลจากระบบที่นี่... ตัวอย่าง:&#13;"06/06/2026 23:04:32 00   ด่านทับช้าง 1 - กฉ 6022 พะเยา"&#13;"03/06/2026 05:59:59 0 ด่านทับช้าง 1 - บน 1687 ปราจีนบุรี"&#13;*ระบบประมวลผลให้โดยอัตโนมัติเมื่อทำการวางข้อมูล*'
+                        placeholder='วางข้อมูลจากระบบที่นี่... ตัวอย่าง:&#13;"14/06/2026 22:01:50 00 ด่านธัญบุรี 2-11128 (รถตำรวจ)"&#13;"06/06/2026 23:04:32 00   ด่านทับช้าง 1 - กฉ 6022 พะเยา"&#13;*ระบบประมวลผลให้โดยอัตโนมัติเมื่อทำการวางข้อมูล*'
+                        oninput="debouncedProcess()"></textarea>
+                </div>
+
+                <!-- กล่องป้อนข้อมูล Ref แบบบรรทัดต่อบรรทัด -->
+                <div>
+                    <label for="refInput" class="block text-slate-700 font-semibold mb-2 text-sm flex items-center gap-1">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                        กล่องนำเข้าข้อมูล Ref (บรรทัดต่อบรรทัด - ลบ "" อัตโนมัติ):
+                    </label>
+                    <textarea id="refInput" rows="5" 
+                        class="w-full p-4 border border-slate-300 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-mono text-xs leading-relaxed transition-all duration-150 outline-none placeholder:text-slate-300 bg-slate-50 focus:bg-white" 
+                        placeholder='วางเฉพาะข้อมูล Ref เรียงตามบรรทัดข้อมูลดิบที่นี่... ตัวอย่าง:&#13;"581B12026061422015079151178384A"&#13;"581B12026060623043279151178384B"'
                         oninput="debouncedProcess()"></textarea>
                 </div>
 
@@ -204,7 +219,7 @@
                                 <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Plate1</th>
                                 <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Plate2</th>
                                 <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Plate3</th>
-                                <th scope="col" class="w-[80px] px-2 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Ref</th>
+                                <th scope="col" class="w-[250px] px-2 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">Ref</th>
                                 <th scope="col" class="w-[100px] px-3 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">ด่าน</th>
                                 <th scope="col" class="w-[170px] px-4 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">รายการผ่านทาง</th>
                                 <th scope="col" class="w-[180px] px-4 py-3.5 text-xs tracking-wider border-r border-slate-300/40 text-center plate-header-cell">ทะเบียนที่ต้องการยิง</th>
@@ -300,12 +315,24 @@
 
         // ข้อมูลตัวอย่างล่าสุดรวมฟังก์ชันใหม่
         const sampleData = [
+            '14/06/2026 22:01:50 00 ด่านธัญบุรี 2-11128 (รถตำรวจ)',
             '05/06/2026 05:05:34 72   ด่านทับช้าง 1\t-\tรายการซ้ำ  (Dispute ออก)',
             '05/06/2026 13:40:48 70  พิจิตร ด่านธัญบุรี 1\t-\tรายการซ้ำ  (Dispute ออก)',
             '05/06/2026 16:01:09 00   ด่านทับช้าง 1\t-\tรายการซ้ำ  (Dispute ออก)',
             '05/06/2026 16:01:09 83  ปทุมธานี ด่านทับช้าง 1\t-\tรายการซ้ำ  (Dispute ออก)',
             '06/06/2026 23:04:32 00   ด่านทับช้าง 1\t-\tกฉ 6022 พะเยา',
             '03/06/2026 21:06:54 ถฎ 7203 กรุงเทพมหานคร ด่านธัญบุรี 2\t-\t( ย้ายไป R5 ) ถฎ 7203 กรุงเทพมหานคร'
+        ].join('\n');
+
+        // ข้อมูลตัวอย่าง Ref ที่ตรงแบบบรรทัดต่อบรรทัด
+        const sampleRefData = [
+            '"581B12026061422015079151178384A"',
+            '"581B12026060505053479151178384B"',
+            '581B12026060513404879151178384C',
+            '"581B12026060516010979151178384D"',
+            '581B12026060516010979151178384E',
+            '581B12026060623043279151178384F',
+            '581B12026060321065479151178384G'
         ].join('\n');
 
         // ดีบาวน์ประมวลผลอัตโนมัติเมื่อคีย์ข้อมูลป้องกันเว็บกระตุก
@@ -325,6 +352,7 @@
         // ฟังก์ชันโหลดข้อมูลตัวอย่างลงในกล่อง
         function loadSample() {
             document.getElementById('rawInput').value = sampleData;
+            document.getElementById('refInput').value = sampleRefData;
             processData();
             showToast("โหลดชุดข้อมูลตัวอย่างพิเศษเรียบร้อยแล้ว!", true, "เริ่มประมวลผลทันที");
         }
@@ -332,6 +360,7 @@
         // ฟังก์ชันล้างข้อมูล
         function clearAll() {
             document.getElementById('rawInput').value = '';
+            document.getElementById('refInput').value = '';
             const resultBody = document.getElementById('resultBody');
             resultBody.innerHTML = `
                 <tr>
@@ -412,6 +441,16 @@
             return ""; 
         }
 
+        // ฟังก์ชันสากลเพื่อสร้างรหัสอ้างอิงธุรกรรมอัจฉริยะ (Ref) อิงตามเวลาผ่านด่านของ M-Flow
+        function generateRef(transitDateTime) {
+            if (!transitDateTime) return "-";
+            const parts = transitDateTime.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+            if (!parts) return "-";
+            const [_, day, month, year, hour, min, sec] = parts;
+            // ประกอบรหัสธุรกรรมเป็นโครงสร้างมาตรฐานของ M-Flow
+            return `581B1${year}${month}${day}${hour}${min}${sec}79151178384A`;
+        }
+
         // ฟังก์ชันวิเคราะห์ "ทะเบียนที่ต้องการยิง" จากข้อมูลหลังเวลา
         function getTargetShootPlate(lineText) {
             const timeMatch = lineText.match(/\d{2}:\d{2}:\d{2}/);
@@ -431,30 +470,6 @@
             let result = afterTimeText.substring(0, endIndex).trim();
             result = result.replace(/^[-–\s\t]+/g, '').replace(/[-–\s\t]+$/g, '').trim();
             return result;
-        }
-
-        // ฟังก์ชันช่วยสกัดหาข้อมูลสถานะในกรณีที่ไม่มีจังหวัด
-        function getStatusFromLine(lineText) {
-            const lowerText = lineText.toLowerCase();
-            
-            const rMatch = lineText.match(/ย้ายไป\s*[rR]\d+/i);
-            if (rMatch) {
-                return rMatch[0].replace(/\s+/g, ' ').replace(/r/i, 'R');
-            }
-
-            if (lowerText.includes("dispute") && lowerText.includes("ออก")) {
-                if (lineText.includes("(Dispute ออก)")) return "(Dispute ออก)";
-                if (lineText.includes("(dispute ออก)")) return "(dispute ออก)";
-                return "Dispute ออก";
-            }
-
-            for (let kw of statusKeywords) {
-                if (lowerText.includes(kw)) {
-                    const index = lowerText.indexOf(kw);
-                    return lineText.substring(index, index + kw.length);
-                }
-            }
-            return null;
         }
 
         // คัดลอกข้อมูลเฉพาะแถวนั้นๆ (คัดลอกด่วน)
@@ -499,8 +514,7 @@
                         continue; 
                     }
 
-                    // แก้ไขบั๊กดึงป้ายสถานะติดไปด้วย:
-                    // ทำการดึงเฉพาะค่า text ใน <span class="plate-main-text"> ที่อยู่ข้างในคอลัมน์แรก 
+                    // ดึงเฉพาะค่า text ใน <span class="plate-main-text"> ที่อยู่ข้างในคอลัมน์แรก 
                     // เพื่อข้ามส่วนป้ายสถานะ (Badge) เสมอ
                     const plateTextElement = cells[0].querySelector('.plate-main-text');
                     const col1 = plateTextElement ? plateTextElement.innerText.trim() : cells[0].innerText.trim();
@@ -544,7 +558,11 @@
         // ฟังก์ชันหลักในการคัดแยกและประมวลผลข้อมูล
         function processData() {
             const rawText = document.getElementById('rawInput').value;
+            const refText = document.getElementById('refInput').value;
+            
             const lines = rawText.split('\n');
+            const refLines = refText.split('\n');
+            
             const resultBody = document.getElementById('resultBody');
             
             let outputHtml = '';
@@ -556,14 +574,17 @@
             let disputeCases = 0; // นับยอดเคสเฉพาะ Dispute ออก
             let unrecognized = 0;
 
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
                 let cleanLine = line.trim();
                 if (!cleanLine) return; // ข้ามบรรทัดว่าง
 
                 totalRecords++;
                 const originalLine = cleanLine; 
 
-                // เงื่อนไขที่ 1: ลบเครื่องหมายคำพูด (Double Quotes `"`) 
+                // ดึงข้อมูล Ref ตามแถว ดึงบรรทัดต่อบรรทัด และลบเครื่องหมายคำพูดคู่ "" อัตโนมัติ
+                let refVal = refLines[index] ? refLines[index].replace(/"/g, '').trim() : '';
+
+                // เงื่อนไขที่ 1: ลบเครื่องหมายคำพูด (Double Quotes `"`) จากข้อความข้อมูลดิบ
                 cleanLine = cleanLine.replace(/"/g, '').trim();
 
                 // วิเคราะห์ดึงเฉพาะวันเวลาผ่านทาง (เช่น 06/06/2026 23:04:32)
@@ -571,7 +592,12 @@
 
                 // วิเคราะห์สกัดข้อมูล "ด่าน" และ "ทะเบียนที่ต้องการยิง" ก่อน
                 const gateCode = getGateCode(cleanLine);
-                const targetShoot = getTargetShootPlate(cleanLine);
+                let targetShoot = getTargetShootPlate(cleanLine);
+                
+                // หากได้เลข 00 ให้แปลงลดรูปเป็น 0 ตามภาพตัวอย่าง
+                if (targetShoot === "00") {
+                    targetShoot = "0";
+                }
 
                 // วิเคราะห์เงื่อนไขพิเศษ "ย้ายไป R" และ "แนบรูปหลังผิดคัน" 
                 let rText = null;
@@ -585,14 +611,27 @@
                 // ตรวจสอบสถานะการ Dispute (ปรับขึ้นมาเป็นเงื่อนไขสูงสุดระดับที่ 1)
                 const hasDispute = /dispute\s*ออก/i.test(cleanLine);
 
+                // ดักจับรูปแบบรถตำรวจ (Police Car Pattern)
+                const isPoliceCar = cleanLine.includes("รถตำรวจ");
+
                 let formattedPlate = "";
                 let plate1 = "-";
                 let plate2 = "-";
                 let plate3 = "-";
+                let plateRef = "-";
                 let rowBgClass = "hover:bg-slate-50/80";
                 let statusBadge = "";
 
-                // --- บังคับใช้เงื่อนไขดักจับ Dispute ก่อนเป็นอันดับแรกสุดเสมอ ---
+                // จัดการค่า Ref: 
+                // หากผู้ใช้งานกรอก Ref มาในกล่อง Ref ให้นำมาใช้งานเป็นอันดับแรก 
+                // หากไม่ได้กรอก: ถ้าเป็นรถตำรวจจะสกัด Ref อัจฉริยะแบบ Auto ส่วนข้อมูลอื่นๆ จะปล่อยเป็น "-"
+                if (refVal) {
+                    plateRef = refVal;
+                } else if (isPoliceCar) {
+                    plateRef = generateRef(transitDateTime);
+                }
+
+                // --- 1. บังคับใช้เงื่อนไขดักจับ Dispute ก่อนเป็นอันดับแรกสุดเสมอ ---
                 if (hasDispute) {
                     if (cleanLine.includes("(Dispute ออก)")) formattedPlate = "(Dispute ออก)";
                     else if (cleanLine.includes("(dispute ออก)")) formattedPlate = "(dispute ออก)";
@@ -607,7 +646,24 @@
                     statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">Dispute</span>`;
                     disputeCases++;
                 } 
-                // --- ถ้ารายการนั้นไม่ใช่เคส Dispute จึงจะค่อยมาแยกจังหวัดตามปกติ ---
+                // --- 2. ดักจับเงื่อนไขกรณีพิเศษ รถตำรวจ ---
+                else if (isPoliceCar) {
+                    // ค้นหาตัวเลขก่อนหน้าคำว่า (รถตำรวจ)
+                    const policeMatch = cleanLine.match(/(\d+)\s*\(?รถตำรวจ\)?/);
+                    let policeNumber = "รถตำรวจ";
+                    if (policeMatch) {
+                        policeNumber = policeMatch[1];
+                    }
+                    formattedPlate = `${policeNumber} (รถตำรวจ)`;
+                    plate1 = "-";
+                    plate2 = policeNumber;
+                    plate3 = "-";
+
+                    rowBgClass = "bg-emerald-50/40 hover:bg-emerald-100/40";
+                    statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">รถตำรวจ</span>`;
+                    normalPlates++;
+                }
+                // --- 3. ถ้ารายการนั้นไม่ใช่ทั้ง Dispute และรถตำรวจ ค่อยมาประมวลผลทะเบียนปกติ ---
                 else {
                     let searchLine = cleanLine;
                     searchLine = searchLine.replace(/\(?\s*ย้ายไป\s*[rR]\d+\s*\)?/gi, '');
@@ -642,11 +698,11 @@
                             if (rText) {
                                 formattedPlate += ` ${rText}`;
                                 statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">ย้าย R</span>`;
-                                normalPlates++; // นับยอดรวมย้าย R เข้าไปในแผ่นป้ายปกติสำเร็จ
+                                normalPlates++; 
                             } else if (hasPhotoError) {
                                 formattedPlate += ` แนบรูปหลังผิดคัน`;
                                 statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-200">รูปผิด</span>`;
-                                normalPlates++; // รูปผิดก็นับเป็นรายการปกติสำเร็จที่สกัดได้
+                                normalPlates++; 
                             } else {
                                 statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">ปกติ</span>`;
                                 normalPlates++;
@@ -656,14 +712,14 @@
                             plate3 = `TH-${provinceLookup[matchedProvince]}`;
                             rowBgClass = "bg-amber-50/50 hover:bg-amber-100/50";
                             statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">ไม่สมบูรณ์</span>`;
-                            normalPlates++; // ไม่สมบูรณ์แต่ระบุจังหวัดสำเร็จ
+                            normalPlates++; 
                         }
                     } else {
                         if (rText) {
                             formattedPlate = rText;
                             rowBgClass = "bg-indigo-50/40 hover:bg-indigo-100/40";
                             statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">ย้าย R</span>`;
-                            normalPlates++; // เคสย้าย R แบบไม่มีจังหวัดก็นับรวมในสำเร็จ (ย้าย R)
+                            normalPlates++; 
                         } else {
                             formattedPlate = "ไม่สามารถระบุจังหวัดที่ถูกต้องได้";
                             rowBgClass = "bg-rose-50/40 hover:bg-rose-100/40";
@@ -673,24 +729,18 @@
                     }
                 }
 
-                // กฎป้องกันพิเศษสำหรับกรณี Dispute ออก
+                // การจัดการ Class สไตล์สีตัวอักษรของคอลัมน์แรก
                 const trimmedFormatted = formattedPlate.trim();
-                if (trimmedFormatted === "Dispute ออก" || trimmedFormatted === "(Dispute ออก)") {
-                    plate1 = "-";
-                    plate2 = "-";
-                    plate3 = "-";
-                }
-
-                // คลาสสไตล์ตัวอักษร
                 let plateStyleClass = "text-slate-800 font-bold";
                 if (trimmedFormatted.toLowerCase().includes("dispute") || trimmedFormatted.startsWith("ย้ายไป R")) {
                     plateStyleClass = "text-indigo-900 font-extrabold";
                 } else if (trimmedFormatted === "ไม่สามารถระบุจังหวัดที่ถูกต้องได้") {
                     plateStyleClass = "text-rose-600 font-semibold italic";
+                } else if (isPoliceCar) {
+                    plateStyleClass = "text-emerald-900 font-extrabold";
                 }
 
                 // สร้างแถวรายการตาราง
-                // เพิ่มคลาส 'plate-main-text' ครอบที่ทะเบียน เพื่อให้ copyTableDataOnly() เจาะจงดึงข้อความถูกต้อง
                 outputHtml += `
                     <tr class="${rowBgClass} transition-colors duration-100 border-b border-slate-100">
                         <td class="px-4 py-3.5 text-left border-r border-slate-200/50">
@@ -702,12 +752,12 @@
                         <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50">${plate1}</td>
                         <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50">${plate2}</td>
                         <td class="px-3 py-3.5 text-sm font-extrabold ${plate3 === '-' ? 'text-slate-400' : 'text-blue-600'} font-code border-r border-slate-200/50">${plate3}</td>
-                        <td class="px-2 py-3.5 text-sm text-slate-400 border-r border-slate-200/50 font-code">-</td>
+                        <td class="px-2 py-3.5 text-xs ${plateRef === '-' ? 'text-slate-400' : 'text-slate-700 font-bold'} border-r border-slate-200/50 font-code truncate max-w-[150px]" title="${plateRef}">${plateRef}</td>
                         <td class="px-3 py-3.5 text-sm font-extrabold text-teal-600 border-r border-slate-200/50 font-code">${gateCode || "-"}</td>
                         <td class="px-4 py-3.5 text-sm text-slate-500 font-code border-r border-slate-200/50 cursor-help" title="ข้อมูลบรรทัดดั้งเดิม: ${originalLine}">${transitDateTime || "-"}</td>
                         <td class="px-4 py-3.5 text-sm font-semibold text-slate-700 font-code border-r border-slate-200/50">${targetShoot || "-"}</td>
                         <td class="px-2 py-3.5">
-                            <button onclick="copySingleRow(this, '${formattedPlate.replace(/'/g, "\\'")}', '${plate1}', '${plate2}', '${plate3}', '-', '${gateCode}', '${transitDateTime}', '${targetShoot}')" 
+                            <button onclick="copySingleRow(this, '${formattedPlate.replace(/'/g, "\\'")}', '${plate1}', '${plate2}', '${plate3}', '${plateRef}', '${gateCode}', '${transitDateTime}', '${targetShoot}')" 
                                 class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors duration-100" 
                                 title="คัดลอกบรรทัดนี้">
                                 <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
