@@ -63,7 +63,7 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     พร้อมใช้งาน
                 </span>
-                <span class="text-xs text-slate-500 border-l border-slate-700 pl-3">v2.8 Enterprise</span>
+                <span class="text-xs text-slate-500 border-l border-slate-700 pl-3">v2.10 Enterprise</span>
             </div>
         </div>
     </nav>
@@ -72,7 +72,7 @@
     <main class="max-w-[1600px] mx-auto px-6 mt-6 space-y-6">
 
         <!-- แผงแสดงสถิติย่อ (Statistical Cards Grid) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">รายการข้อมูลนำเข้า</p>
@@ -114,6 +114,18 @@
                 <div class="p-3.5 bg-rose-50 text-rose-600 rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                    </svg>
+                </div>
+            </div>
+            <!-- การ์ด: แสดงจำนวนรายการที่ได้ทำการกดคัดลอก/ดำเนินการเทสีแล้ว -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between ring-1 ring-blue-500/20">
+                <div>
+                    <p class="text-xs font-semibold text-blue-500 uppercase tracking-wider">คัดลอก / ดำเนินการแล้ว</p>
+                    <h3 class="text-3xl font-extrabold text-blue-600 mt-1 font-code" id="statCopied">0</h3>
+                </div>
+                <div class="p-3.5 bg-blue-50 text-blue-600 rounded-xl shadow-inner">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                     </svg>
                 </div>
             </div>
@@ -187,9 +199,13 @@
                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        คำแนะนำการคัดลอก:
+                        คำแนะนำการทำงาน:
                     </p>
-                    <p>ปุ่ม "คัดลอกข้อมูลในตาราง" จะทำการส่งออกข้อมูลเป็นแบบคั่นด้วย Tab ซึ่งเหมาะสำหรับการนำไปกด **Paste (วาง)** ลงใน **Excel** หรือ **Google Sheets** โดยที่ข้อมูลจะถูกแบ่งเข้าแต่ละช่องในแถวที่เหมาะสมให้ทันทีอย่างแม่นยำ</p>
+                    <ul class="list-disc list-inside pl-1 space-y-1">
+                        <li>สามารถ <b>คลิกที่ช่อง ทะเบียนที่ต้องการสร้าง</b> เพื่อสลับสถานะการเทสี/เอาสีออกด้วยตัวเองได้</li>
+                        <li>สามารถ <b>คลิกที่ช่อง Plate1, Plate2, Ref</b> ในตารางเพื่อคัดลอกข้อมูลเฉพาะช่อง และระบบจะเทสีให้ช่องแรกอัตโนมัติ</li>
+                        <li>เมื่อมีการเทสี หรือเอาสีออก ยอด "คัดลอก / ดำเนินการแล้ว" จะเพิ่ม/ลดตามจริง</li>
+                    </ul>
                 </div>
             </div>
 
@@ -236,7 +252,7 @@
                                             </svg>
                                         </div>
                                         <div class="text-sm">
-                                            <p class="font-bold text-slate-500 italic not-of-it-style font-sans">ยังไม่มีข้อมูลในตาราง</p>
+                                            <p class="font-bold text-slate-500 italic font-sans">ยังไม่มีข้อมูลในตาราง</p>
                                             <p class="text-xs text-slate-400 mt-1">กรุณาวางข้อมูลหรือกดปุ่ม "โหลดข้อมูลตัวอย่างล่าสุด"</p>
                                         </div>
                                     </div>
@@ -252,6 +268,9 @@
 
     <!-- โค้ดโปรแกรมในการประมวลผลข้อมูล -->
     <script>
+        // ตัวแปรส่วนกลางสำหรับนับจำนวนแถวที่คัดลอก/เทสีข้อมูลแล้ว
+        let copiedRowsCount = 0;
+
         // --- แหล่งข้อมูลจังหวัดเพื่ออ้างอิงรหัส System ---
         const provinceData = [
             { province: "กรุงเทพมหานคร", system: 10, plate: 1 }, { province: "สมุทรปราการ", system: 11, plate: 18 },
@@ -301,7 +320,7 @@
             provinceLookup[item.province.trim()] = item.system;
         });
 
-        // เรียงลำดับคีย์ของจังหวัดตามความยาวเพื่อป้องกันชื่อซ้ำที่อาจซ้อนกัน เช่น "สมุทรสาคร" กับ "สมุทรสงคราม"
+        // เรียงลำดับคีย์ของจังหวัดตามความยาวเพื่อป้องกันชื่อซ้ำ
         const sortedProvinces = Object.keys(provinceLookup).sort((a, b) => b.length - a.length);
 
         // คำสำคัญที่เกี่ยวกับสถานะต่างๆ ที่อาจมาแทนชื่อจังหวัด
@@ -313,7 +332,7 @@
             "ย้ายไปr"
         ];
 
-        // ข้อมูลตัวอย่างล่าสุดรวมฟังก์ชันใหม่
+        // ข้อมูลตัวอย่างล่าสุด
         const sampleData = [
             '14/06/2026 22:01:50 00 ด่านธัญบุรี 2-11128 (รถตำรวจ)',
             '05/06/2026 05:05:34 72   ด่านทับช้าง 1\t-\tรายการซ้ำ  (Dispute ออก)',
@@ -324,7 +343,7 @@
             '03/06/2026 21:06:54 ถฎ 7203 กรุงเทพมหานคร ด่านธัญบุรี 2\t-\t( ย้ายไป R5 ) ถฎ 7203 กรุงเทพมหานคร'
         ].join('\n');
 
-        // ข้อมูลตัวอย่าง Ref ที่ตรงแบบบรรทัดต่อบรรทัด
+        // ข้อมูลตัวอย่าง Ref 
         const sampleRefData = [
             '"581B12026061422015079151178384A"',
             '"581B12026060505053479151178384B"',
@@ -341,15 +360,13 @@
             clearTimeout(processTimeout);
             processTimeout = setTimeout(() => {
                 processData();
-            }, 500); // ดีเลย์ 500ms หลังพิมพ์หรือวางข้อความเสร็จ
+            }, 500);
         }
 
-        // ฟังก์ชันเริ่มรันประมวลผลเมื่อเปิดเว็บ (ปล่อยว่างเพื่อให้พร้อมรับข้อมูลใหม่ทันที)
         window.onload = function() {
             clearAll();
         };
 
-        // ฟังก์ชันโหลดข้อมูลตัวอย่างลงในกล่อง
         function loadSample() {
             document.getElementById('rawInput').value = sampleData;
             document.getElementById('refInput').value = sampleRefData;
@@ -357,7 +374,6 @@
             showToast("โหลดชุดข้อมูลตัวอย่างพิเศษเรียบร้อยแล้ว!", true, "เริ่มประมวลผลทันที");
         }
 
-        // ฟังก์ชันล้างข้อมูล
         function clearAll() {
             document.getElementById('rawInput').value = '';
             document.getElementById('refInput').value = '';
@@ -380,10 +396,14 @@
                 </tr>
             `;
             document.getElementById('badgeCount').textContent = "ทั้งหมด 0 รายการ";
+            
+            // รีเซ็ตค่านับเทสี/คัดลอก
+            copiedRowsCount = 0;
+            document.getElementById('statCopied').textContent = "0";
+
             updateStats(0, 0, 0, 0);
         }
 
-        // ฟังก์ชันแจ้งเตือน Toast custom ใช้งานแทน alert()
         function showToast(message, isSuccess = true, subMessage = "สามารถวางใน Excel ได้ทันที") {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMessage');
@@ -401,18 +421,15 @@
                 iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`;
             }
 
-            // แสดงหน้าจอ Toast
             toast.classList.remove('translate-y-[-100px]', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
 
-            // ซ่อนหน้าจอเมื่อผ่านไป 2.5 วินาที
             setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-[-100px]', 'opacity-0');
             }, 2500);
         }
 
-        // อัปเดตข้อมูลสถิติบน Dashboard
         function updateStats(total, normal, special, errors) {
             document.getElementById('statTotal').textContent = total;
             document.getElementById('statNormal').textContent = normal;
@@ -420,13 +437,11 @@
             document.getElementById('statError').textContent = errors;
         }
 
-        // ฟังก์ชันดึงเฉพาะ วันเวลา (เช่น 06/06/2026 23:04:32) จากด้านหน้าของแถวข้อมูล
         function getTransitDateTime(lineText) {
             const dateTimeMatch = lineText.match(/\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2}/);
             return dateTimeMatch ? dateTimeMatch[0] : "";
         }
 
-        // ฟังก์ชันแปลงชื่อด่านเป็นรหัสด่าน
         function getGateCode(lineText) {
             if (lineText.includes("ด่านทับช้าง 1")) return "TC1";
             if (lineText.includes("ด่านทับช้าง 2")) return "TC2";
@@ -441,17 +456,14 @@
             return ""; 
         }
 
-        // ฟังก์ชันสากลเพื่อสร้างรหัสอ้างอิงธุรกรรมอัจฉริยะ (Ref) อิงตามเวลาผ่านด่านของ M-Flow
         function generateRef(transitDateTime) {
             if (!transitDateTime) return "-";
             const parts = transitDateTime.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
             if (!parts) return "-";
             const [_, day, month, year, hour, min, sec] = parts;
-            // ประกอบรหัสธุรกรรมเป็นโครงสร้างมาตรฐานของ M-Flow
             return `581B1${year}${month}${day}${hour}${min}${sec}79151178384A`;
         }
 
-        // ฟังก์ชันวิเคราะห์ "ทะเบียนที่ต้องการยิง" จากข้อมูลหลังเวลา
         function getTargetShootPlate(lineText) {
             const timeMatch = lineText.match(/\d{2}:\d{2}:\d{2}/);
             if (!timeMatch) return "";
@@ -472,8 +484,75 @@
             return result;
         }
 
-        // คัดลอกข้อมูลเฉพาะแถวนั้นๆ (คัดลอกด่วน)
-        function copySingleRow(elementId, formattedPlate, p1, p2, p3, ref, gate, time, shoot) {
+        // ฟังก์ชันสลับการทำสีแถวด้วยตนเอง (คลิกที่ช่อง ทะเบียนที่ต้องการสร้าง)
+        function toggleRowHighlight(element) {
+            const tr = element.closest('tr');
+            if (!tr) return;
+
+            const isCopied = tr.getAttribute('data-copied') === 'true';
+            const firstTd = tr.querySelector('td:first-child');
+
+            if (isCopied) {
+                // เอาสีออกและลดจำนวน
+                tr.setAttribute('data-copied', 'false');
+                if (firstTd) {
+                    firstTd.classList.remove('bg-emerald-100', 'transition-colors', 'duration-300');
+                }
+                copiedRowsCount--;
+            } else {
+                // เพิ่มสีและเพิ่มจำนวน
+                tr.setAttribute('data-copied', 'true');
+                if (firstTd) {
+                    firstTd.classList.add('bg-emerald-100', 'transition-colors', 'duration-300');
+                }
+                copiedRowsCount++;
+            }
+            document.getElementById('statCopied').textContent = copiedRowsCount;
+        }
+
+        // ฟังก์ชันระบบทำสีและนับยอดแถวที่คัดลอก/ดำเนินการแล้วอัตโนมัติ (ไม่ให้เบิ้ลจำนวน)
+        function markRowAsCopied(element) {
+            const tr = element.closest('tr');
+            if (tr && tr.getAttribute('data-copied') !== 'true') {
+                tr.setAttribute('data-copied', 'true'); 
+                
+                const firstTd = tr.querySelector('td:first-child');
+                if (firstTd) {
+                    firstTd.classList.add('bg-emerald-100', 'transition-colors', 'duration-300');
+                }
+                
+                copiedRowsCount++;
+                document.getElementById('statCopied').textContent = copiedRowsCount;
+            }
+        }
+
+        // คัดลอกข้อมูลเฉพาะเซลล์ (Plate1, Plate2, Ref)
+        function copyCellText(element, textToCopy) {
+            if (!textToCopy || textToCopy === '-') {
+                showToast("ไม่มีข้อมูลให้คัดลอกในช่องนี้", false, "ข้อมูลเป็นค่าว่าง");
+                return;
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast(`คัดลอก: ${textToCopy}`, true, "บันทึกลงคลิปบอร์ดสำเร็จ");
+                    markRowAsCopied(element); // ใส่สีให้แถวและนับยอด
+                }
+            } catch (err) {
+                showToast("คัดลอกไม่สำเร็จ", false, "สิทธิ์เบราว์เซอร์ไม่เพียงพอ");
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // คัดลอกข้อมูลเฉพาะแถวนั้นๆ (คัดลอกด่วนทั้งแถว 8 คอลัมน์)
+        function copySingleRow(element, formattedPlate, p1, p2, p3, ref, gate, time, shoot) {
             const rowText = `${formattedPlate}\t${p1}\t${p2}\t${p3}\t${ref}\t${gate}\t${time}\t${shoot}`;
             
             const textarea = document.createElement('textarea');
@@ -486,6 +565,7 @@
                 const successful = document.execCommand('copy');
                 if (successful) {
                     showToast("คัดลอกข้อมูลรายการนี้สำเร็จ!", true, "คัดลอกแบบเว้นแท็บ 8 คอลัมน์");
+                    markRowAsCopied(element); // ใส่สีให้แถวและนับยอด
                 }
             } catch (err) {
                 showToast("คัดลอกไม่สำเร็จ", false, "สิทธิ์เบราว์เซอร์ไม่เพียงพอ");
@@ -493,7 +573,7 @@
             document.body.removeChild(textarea);
         }
 
-        // ฟังก์ชันคัดลอกเฉพาะข้อมูลในตารางทั้งหมด (ส่งออกโครงสร้างแบบ 8 คอลัมน์)
+        // ฟังก์ชันคัดลอกข้อมูลทั้งหมดของตาราง
         function copyTableDataOnly() {
             const resultBody = document.getElementById('resultBody');
             const rows = resultBody.getElementsByTagName('tr');
@@ -509,26 +589,27 @@
             for (let i = 0; i < rows.length; i++) {
                 const cells = rows[i].getElementsByTagName('td');
                 
-                if (cells.length === 9) { // 8 ข้อมูล + 1 ปุ่มคัดลอกรายแถว
+                if (cells.length === 9) { 
                     if (cells[0].innerText.includes("ไม่สามารถระบุจังหวัด") && cells[1].innerText === "-") {
                         continue; 
                     }
 
-                    // ดึงเฉพาะค่า text ใน <span class="plate-main-text"> ที่อยู่ข้างในคอลัมน์แรก 
-                    // เพื่อข้ามส่วนป้ายสถานะ (Badge) เสมอ
                     const plateTextElement = cells[0].querySelector('.plate-main-text');
                     const col1 = plateTextElement ? plateTextElement.innerText.trim() : cells[0].innerText.trim();
                     
-                    const col2 = cells[1].innerText.trim(); // Plate1
-                    const col3 = cells[2].innerText.trim(); // Plate2
-                    const col4 = cells[3].innerText.trim(); // Plate3
-                    const col5 = cells[4].innerText.trim(); // Ref
-                    const col6 = cells[5].innerText.trim(); // ด่าน
-                    const col7 = cells[6].innerText.trim(); // รายการผ่านทาง (วันเวลา)
-                    const col8 = cells[7].innerText.trim(); // ทะเบียนที่ต้องการยิง
+                    const col2 = cells[1].innerText.trim(); 
+                    const col3 = cells[2].innerText.trim(); 
+                    const col4 = cells[3].innerText.trim(); 
+                    const col5 = cells[4].innerText.trim(); 
+                    const col6 = cells[5].innerText.trim(); 
+                    const col7 = cells[6].innerText.trim(); 
+                    const col8 = cells[7].innerText.trim(); 
 
                     textToCopy += `${col1}\t${col2}\t${col3}\t${col4}\t${col5}\t${col6}\t${col7}\t${col8}\n`;
                     validRowsExtracted++;
+                    
+                    // ทำสัญลักษณ์ระบายสีว่าถูกคัดลอก/ประมวลผลแล้ว
+                    markRowAsCopied(cells[0]);
                 }
             }
 
@@ -568,50 +649,42 @@
             let outputHtml = '';
             let validCount = 0;
 
-            // ตัวแปรนับสถิติ Dashboard
             let totalRecords = 0;
-            let normalPlates = 0; // ในยอดนี้จะนับรวม ย้าย R ตามเงื่อนไขใหม่ด้วย
-            let disputeCases = 0; // นับยอดเคสเฉพาะ Dispute ออก
+            let normalPlates = 0; 
+            let disputeCases = 0; 
             let unrecognized = 0;
+
+            // รีเซ็ตยอดนับทำรายการแถวใหม่ทุกครั้งที่มีการประมวลผล
+            copiedRowsCount = 0;
+            document.getElementById('statCopied').textContent = "0";
 
             lines.forEach((line, index) => {
                 let cleanLine = line.trim();
-                if (!cleanLine) return; // ข้ามบรรทัดว่าง
+                if (!cleanLine) return; 
 
                 totalRecords++;
                 const originalLine = cleanLine; 
 
-                // ดึงข้อมูล Ref ตามแถว ดึงบรรทัดต่อบรรทัด และลบเครื่องหมายคำพูดคู่ "" อัตโนมัติ
                 let refVal = refLines[index] ? refLines[index].replace(/"/g, '').trim() : '';
 
-                // เงื่อนไขที่ 1: ลบเครื่องหมายคำพูด (Double Quotes `"`) จากข้อความข้อมูลดิบ
                 cleanLine = cleanLine.replace(/"/g, '').trim();
 
-                // วิเคราะห์ดึงเฉพาะวันเวลาผ่านทาง (เช่น 06/06/2026 23:04:32)
                 const transitDateTime = getTransitDateTime(cleanLine);
-
-                // วิเคราะห์สกัดข้อมูล "ด่าน" และ "ทะเบียนที่ต้องการยิง" ก่อน
                 const gateCode = getGateCode(cleanLine);
                 let targetShoot = getTargetShootPlate(cleanLine);
                 
-                // หากได้เลข 00 ให้แปลงลดรูปเป็น 0 ตามภาพตัวอย่าง
                 if (targetShoot === "00") {
                     targetShoot = "0";
                 }
 
-                // วิเคราะห์เงื่อนไขพิเศษ "ย้ายไป R" และ "แนบรูปหลังผิดคัน" 
                 let rText = null;
                 const rMatch = cleanLine.match(/ย้ายไป\s*[rR]\d+/i);
                 if (rMatch) {
-                    rText = rMatch[0].replace(/\s+/g, ' ').replace(/r/i, 'R'); // เช่น "ย้ายไป R5"
+                    rText = rMatch[0].replace(/\s+/g, ' ').replace(/r/i, 'R'); 
                 }
 
                 const hasPhotoError = cleanLine.includes("แนบรูปหลังผิดคัน");
-                
-                // ตรวจสอบสถานะการ Dispute (ปรับขึ้นมาเป็นเงื่อนไขสูงสุดระดับที่ 1)
                 const hasDispute = /dispute\s*ออก/i.test(cleanLine);
-
-                // ดักจับรูปแบบรถตำรวจ (Police Car Pattern)
                 const isPoliceCar = cleanLine.includes("รถตำรวจ");
 
                 let formattedPlate = "";
@@ -622,9 +695,6 @@
                 let rowBgClass = "hover:bg-slate-50/80";
                 let statusBadge = "";
 
-                // จัดการค่า Ref: 
-                // หากผู้ใช้งานกรอก Ref มาในกล่อง Ref ให้นำมาใช้งานเป็นอันดับแรก 
-                // หากไม่ได้กรอก: ถ้าเป็นรถตำรวจจะสกัด Ref อัจฉริยะแบบ Auto ส่วนข้อมูลอื่นๆ จะปล่อยเป็น "-"
                 if (refVal) {
                     plateRef = refVal;
                 } else if (isPoliceCar) {
@@ -648,7 +718,6 @@
                 } 
                 // --- 2. ดักจับเงื่อนไขกรณีพิเศษ รถตำรวจ ---
                 else if (isPoliceCar) {
-                    // ค้นหาตัวเลขก่อนหน้าคำว่า (รถตำรวจ)
                     const policeMatch = cleanLine.match(/(\d+)\s*\(?รถตำรวจ\)?/);
                     let policeNumber = "รถตำรวจ";
                     if (policeMatch) {
@@ -729,8 +798,13 @@
                     }
                 }
 
-                // การจัดการ Class สไตล์สีตัวอักษรของคอลัมน์แรก
                 const trimmedFormatted = formattedPlate.trim();
+                if (trimmedFormatted === "Dispute ออก" || trimmedFormatted === "(Dispute ออก)") {
+                    plate1 = "-";
+                    plate2 = "-";
+                    plate3 = "-";
+                }
+
                 let plateStyleClass = "text-slate-800 font-bold";
                 if (trimmedFormatted.toLowerCase().includes("dispute") || trimmedFormatted.startsWith("ย้ายไป R")) {
                     plateStyleClass = "text-indigo-900 font-extrabold";
@@ -740,26 +814,26 @@
                     plateStyleClass = "text-emerald-900 font-extrabold";
                 }
 
-                // สร้างแถวรายการตาราง
+                // สังเกตที่ช่องแรก (ทะเบียนที่ต้องการสร้าง) มีการเพิ่ม onclick="toggleRowHighlight(this)"
                 outputHtml += `
-                    <tr class="${rowBgClass} transition-colors duration-100 border-b border-slate-100">
-                        <td class="px-4 py-3.5 text-left border-r border-slate-200/50">
+                    <tr class="${rowBgClass} transition-colors duration-100 border-b border-slate-100" data-copied="false">
+                        <td class="px-4 py-3.5 text-left border-r border-slate-200/50 cursor-pointer hover:bg-slate-200/50 transition-colors" onclick="toggleRowHighlight(this)" title="คลิกเพื่อสลับสถานะการทำรายการ">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="plate-main-text text-sm ${plateStyleClass}">${formattedPlate}</span>
                                 ${statusBadge}
                             </div>
                         </td>
-                        <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50">${plate1}</td>
-                        <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50">${plate2}</td>
+                        <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50 cursor-pointer hover:bg-blue-50 active:bg-blue-100 transition-colors" title="คลิกเพื่อคัดลอก: ${plate1}" onclick="copyCellText(this, '${plate1}')">${plate1}</td>
+                        <td class="px-3 py-3.5 text-sm text-slate-600 font-semibold font-code border-r border-slate-200/50 cursor-pointer hover:bg-blue-50 active:bg-blue-100 transition-colors" title="คลิกเพื่อคัดลอก: ${plate2}" onclick="copyCellText(this, '${plate2}')">${plate2}</td>
                         <td class="px-3 py-3.5 text-sm font-extrabold ${plate3 === '-' ? 'text-slate-400' : 'text-blue-600'} font-code border-r border-slate-200/50">${plate3}</td>
-                        <td class="px-2 py-3.5 text-xs ${plateRef === '-' ? 'text-slate-400' : 'text-slate-700 font-bold'} border-r border-slate-200/50 font-code truncate max-w-[150px]" title="${plateRef}">${plateRef}</td>
+                        <td class="px-2 py-3.5 text-xs ${plateRef === '-' ? 'text-slate-400' : 'text-slate-700 font-bold'} border-r border-slate-200/50 font-code truncate max-w-[150px] cursor-pointer hover:bg-blue-50 active:bg-blue-100 transition-colors" title="คลิกเพื่อคัดลอก: ${plateRef}" onclick="copyCellText(this, '${plateRef}')">${plateRef}</td>
                         <td class="px-3 py-3.5 text-sm font-extrabold text-teal-600 border-r border-slate-200/50 font-code">${gateCode || "-"}</td>
                         <td class="px-4 py-3.5 text-sm text-slate-500 font-code border-r border-slate-200/50 cursor-help" title="ข้อมูลบรรทัดดั้งเดิม: ${originalLine}">${transitDateTime || "-"}</td>
                         <td class="px-4 py-3.5 text-sm font-semibold text-slate-700 font-code border-r border-slate-200/50">${targetShoot || "-"}</td>
                         <td class="px-2 py-3.5">
                             <button onclick="copySingleRow(this, '${formattedPlate.replace(/'/g, "\\'")}', '${plate1}', '${plate2}', '${plate3}', '${plateRef}', '${gateCode}', '${transitDateTime}', '${targetShoot}')" 
                                 class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors duration-100" 
-                                title="คัดลอกบรรทัดนี้">
+                                title="คัดลอกบรรทัดนี้ทั้งหมด">
                                 <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                 </svg>
