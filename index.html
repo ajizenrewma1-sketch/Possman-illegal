@@ -643,6 +643,7 @@
         }
 
         // ฟังก์ชันหลัก
+        // ฟังก์ชันหลัก
         function processData() {
             const rawText = document.getElementById('rawInput').value;
             const refText = document.getElementById('refInput').value;
@@ -661,6 +662,9 @@
 
             copiedRowsCount = 0;
             document.getElementById('statCopied').textContent = "0";
+
+            // *** เพิ่มตัวแปรเก็บรายการผ่านทางที่พบแล้ว เพื่อตรวจสอบข้อมูลซ้ำ ***
+            const seenTransitTimes = new Set();
 
             lines.forEach((line, index) => {
                 let cleanLine = line.trim();
@@ -681,11 +685,26 @@
                     targetShoot = "0";
                 }
 
+                // *** ตรวจสอบรายการผ่านทางซ้ำ ***
+                let isDuplicate = false;
+                if (transitDateTime) {
+                    if (seenTransitTimes.has(transitDateTime)) {
+                        isDuplicate = true; // พบว่ามีรายการนี้อยู่ก่อนแล้ว (ซ้ำ)
+                    } else {
+                        seenTransitTimes.add(transitDateTime); // บันทึกรายการใหม่
+                    }
+                }
+
                 // ประมวลผลดึงสถานะจาก CSV
                 let csvStatusText = "-";
                 let csvStatusHtml = '<span class="text-slate-400 font-medium">-</span>';
 
-                if (isCsvLoaded) {
+                // *** อัพเดทเงื่อนไข: ถ้ารายการซ้ำ ให้ใส่ "ไม่พบสถานะ" และไม่เข้าไปค้นหาใน CSV ***
+                if (isDuplicate) {
+                    csvStatusText = "ไม่พบสถานะ";
+                    csvStatusHtml = `<span class="text-rose-500 italic text-xs font-semibold">ไม่พบสถานะ</span>`;
+                } else if (isCsvLoaded) {
+                    // ทำงานเฉพาะรายการที่ไม่ติดสถานะซ้ำ
                     if (transitDateTime && csvStatusMap.has(transitDateTime)) {
                         csvStatusText = csvStatusMap.get(transitDateTime);
                         csvStatusHtml = `<span class="text-purple-600 font-bold">${csvStatusText}</span>`;
